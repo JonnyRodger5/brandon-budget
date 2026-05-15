@@ -4,30 +4,31 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwt4sizpnUxQqAuPrbRL
 
 const db = {
   async get(table, filters = {}) {
-    const params = new URLSearchParams({ table, ...filters });
+    const params = new URLSearchParams({ action: 'get', table, ...filters });
     const r = await fetch(`${SCRIPT_URL}?${params}`);
     return r.json();
   },
   async upsert(table, data) {
     const rows = Array.isArray(data) ? data : [data];
-    const r = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'upsert', table, rows }),
-    });
-    return r.json();
+    try {
+      const params = new URLSearchParams({ action: 'upsert', table, rows: JSON.stringify(rows) });
+      const r = await fetch(`${SCRIPT_URL}?${params}`);
+      const result = await r.json();
+      return Array.isArray(result) ? result : rows;
+    } catch { return rows; }
   },
   async update(table, id, idField = 'id', data) {
-    const r = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'update', table, id, idField, data }),
-    });
-    return r.json();
+    try {
+      const params = new URLSearchParams({ action: 'update', table, id: String(id), idField, data: JSON.stringify(data) });
+      const r = await fetch(`${SCRIPT_URL}?${params}`);
+      return r.json();
+    } catch { return [data]; }
   },
   async delete(table, id, idField = 'id') {
-    await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'delete', table, id, idField }),
-    });
+    try {
+      const params = new URLSearchParams({ action: 'delete', table, id: String(id), idField });
+      await fetch(`${SCRIPT_URL}?${params}`);
+    } catch {}
   },
 };
 
