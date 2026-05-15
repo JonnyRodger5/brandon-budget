@@ -1073,37 +1073,37 @@ export default function App() {
             </div>}
           </div>
         </div>
-        {[...debts.filter(d=>d.collections),...debts.filter(d=>!d.collections)].map((d,idx)=>{
-          const isCol=d.collections;
-          const e=editDebtBufs[d.id]||{};
-          const tot=editDebtMode?(+(parseFloat(e.total)||0)):Number(d.total);
-          const pd=editDebtMode?(+(parseFloat(e.paid)||0)):Number(d.paid);
-          const pct=tot>0?(pd/tot)*100:0,rem=tot-pd,done=rem<=0;
-          function renderDebtCard(d,e,pct,rem,done,isCol){return(<div key={d.id} style={{...S.card,borderLeft:`3px solid ${isCol?"#ef4444":done?"#22c55e":"var(--color-border-tertiary)"}`}}>
+        {[...debts.filter(d=>d.collections),...debts.filter(d=>!d.collections)].map((debt,idx)=>{
+          const isCol=debt.collections;
+          const ebuf=editDebtBufs[debt.id]||{};
+          const tot=editDebtMode?(+(parseFloat(ebuf.total)||0)):Number(debt.total);
+          const pd=editDebtMode?(+(parseFloat(ebuf.paid)||0)):Number(debt.paid);
+          const dpct=tot>0?(pd/tot)*100:0,drem=tot-pd,ddone=drem<=0;
+          const debtCard=(<div key={debt.id} style={{...S.card,borderLeft:`3px solid ${isCol?"#ef4444":ddone?"#22c55e":"var(--color-border-tertiary)"}`}}>
             {editDebtMode?(<>
-              <input value={e.name||""} onChange={ev=>setEditDebtBufs(p=>({...p,[d.id]:{...p[d.id],name:ev.target.value}}))} style={{...S.ii,marginBottom:8,fontSize:13}}/>
+              <input value={ebuf.name||""} onChange={ev=>setEditDebtBufs(p=>({...p,[debt.id]:{...p[debt.id],name:ev.target.value}}))} style={{...S.ii,marginBottom:8,fontSize:13}}/>
               <div style={S.fieldRow}>
-                <div><div style={S.label}>Total</div><div style={{display:"flex",gap:3,alignItems:"center"}}><span style={S.sm}>$</span><input type="number" value={e.total||""} onChange={ev=>setEditDebtBufs(p=>({...p,[d.id]:{...p[d.id],total:ev.target.value}}))} style={S.ii}/></div></div>
-                <div><div style={S.label}>Paid</div><div style={{display:"flex",gap:3,alignItems:"center"}}><span style={S.sm}>$</span><input type="number" value={e.paid||""} onChange={ev=>setEditDebtBufs(p=>({...p,[d.id]:{...p[d.id],paid:ev.target.value}}))} style={S.ii}/></div></div>
+                <div><div style={S.label}>Total</div><div style={{display:"flex",gap:3,alignItems:"center"}}><span style={S.sm}>$</span><input type="number" value={ebuf.total||""} onChange={ev=>setEditDebtBufs(p=>({...p,[debt.id]:{...p[debt.id],total:ev.target.value}}))} style={S.ii}/></div></div>
+                <div><div style={S.label}>Paid</div><div style={{display:"flex",gap:3,alignItems:"center"}}><span style={S.sm}>$</span><input type="number" value={ebuf.paid||""} onChange={ev=>setEditDebtBufs(p=>({...p,[debt.id]:{...p[debt.id],paid:ev.target.value}}))} style={S.ii}/></div></div>
               </div>
-              <div style={{marginBottom:8}}><div style={S.label}>APR %</div><input type="number" value={e.apr||""} onChange={ev=>setEditDebtBufs(p=>({...p,[d.id]:{...p[d.id],apr:ev.target.value}}))} placeholder="0" style={S.ii}/></div>
-              <label style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--color-text-secondary)",cursor:"pointer"}}><input type="checkbox" checked={e.collections??d.collections} onChange={ev=>setEditDebtBufs(p=>({...p,[d.id]:{...p[d.id],collections:ev.target.checked}}))}/>In collections</label>
+              <div style={{marginBottom:8}}><div style={S.label}>APR %</div><input type="number" value={ebuf.apr||""} onChange={ev=>setEditDebtBufs(p=>({...p,[debt.id]:{...p[debt.id],apr:ev.target.value}}))} placeholder="0" style={S.ii}/></div>
+              <label style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--color-text-secondary)",cursor:"pointer"}}><input type="checkbox" checked={ebuf.collections??debt.collections} onChange={ev=>setEditDebtBufs(p=>({...p,[debt.id]:{...p[debt.id],collections:ev.target.checked}}))}/>In collections</label>
             </>):(<>
               <div style={{...S.row,marginBottom:8}}>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:7}}><span style={{fontSize:13,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.name}</span>{done&&<span style={S.chip("#22c55e")}>paid off</span>}</div>
-                  <div style={S.sm}>{pct.toFixed(0)}% paid{Number(d.apr)>0?` · ${d.apr}% APR`:""}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:7}}><span style={{fontSize:13,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{debt.name}</span>{ddone&&<span style={S.chip("#22c55e")}>paid off</span>}</div>
+                  <div style={S.sm}>{dpct.toFixed(0)}% paid{Number(debt.apr)>0?` · ${debt.apr}% APR`:""}</div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-                  <span style={{fontSize:15,fontWeight:500,color:isCol?"#ef4444":done?"#22c55e":"var(--color-text-primary)"}}>{fmt(rem)}</span>
-                  <button onClick={()=>removeDebt(d.id,d.name)} style={{background:"none",border:"none",cursor:"pointer",color:"var(--color-text-tertiary)",fontSize:18,lineHeight:1,padding:0,width:"auto"}}>×</button>
+                  <span style={{fontSize:15,fontWeight:500,color:isCol?"#ef4444":ddone?"#22c55e":"var(--color-text-primary)"}}>{fmt(drem)}</span>
+                  <button onClick={()=>removeDebt(debt.id,debt.name)} style={{background:"none",border:"none",cursor:"pointer",color:"var(--color-text-tertiary)",fontSize:18,lineHeight:1,padding:0,width:"auto"}}>×</button>
                 </div>
               </div>
-              <Bar pct={pct} color={isCol?"#ef4444":"#22c55e"} h={5}/>
+              <Bar pct={dpct} color={isCol?"#ef4444":"#22c55e"} h={5}/>
             </>)}
-          </div>);}
-          if(!isCol&&idx===debts.filter(d=>d.collections).length) return[<div key="sect" style={S.sect}>Active Debts</div>,renderDebtCard(d,e,pct,rem,done,isCol)];
-          return renderDebtCard(d,e,pct,rem,done,isCol);
+          </div>);
+          if(!isCol&&idx===debts.filter(d=>d.collections).length) return[<div key="sect" style={S.sect}>Active Debts</div>,debtCard];
+          return debtCard;
         }).flat()}
       </>)}
 
