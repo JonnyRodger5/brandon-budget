@@ -4,7 +4,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwt4sizpnUxQqAuPrbRL
 
 const db = {
   async get(table, filters = {}) {
-    const params = new URLSearchParams({ action: 'get', table, ...filters });
+    const params = new URLSearchParams({ table, ...filters }); // no action param needed for reads
     const r = await fetch(`${SCRIPT_URL}?${params}`);
     return r.json();
   },
