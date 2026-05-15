@@ -4,16 +4,21 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwt4sizpnUxQqAuPrbRL
 
 const db = {
   async get(table, filters = {}) {
-    const params = new URLSearchParams({ table, ...filters }); // no action param needed for reads
-    const r = await fetch(`${SCRIPT_URL}?${params}`);
-    return r.json();
+    try {
+      const params = new URLSearchParams({ table, ...filters });
+      const r = await fetch(`${SCRIPT_URL}?${params}`);
+      const text = await r.text();
+      const data = JSON.parse(text);
+      return Array.isArray(data) ? data : [];
+    } catch { return []; }
   },
   async upsert(table, data) {
     const rows = Array.isArray(data) ? data : [data];
     try {
       const params = new URLSearchParams({ action: 'upsert', table, rows: JSON.stringify(rows) });
       const r = await fetch(`${SCRIPT_URL}?${params}`);
-      const result = await r.json();
+      const text = await r.text();
+      const result = JSON.parse(text);
       return Array.isArray(result) ? result : rows;
     } catch { return rows; }
   },
@@ -21,7 +26,8 @@ const db = {
     try {
       const params = new URLSearchParams({ action: 'update', table, id: String(id), idField, data: JSON.stringify(data) });
       const r = await fetch(`${SCRIPT_URL}?${params}`);
-      return r.json();
+      const text = await r.text();
+      return JSON.parse(text);
     } catch { return [data]; }
   },
   async delete(table, id, idField = 'id') {
@@ -349,35 +355,27 @@ export default function App() {
   useEffect(() => { if (aiRef.current) aiRef.current.scrollTop = aiRef.current.scrollHeight; }, [aiResponse]);
 
   async function loadAll() {
-    try {
-      // Core data — must succeed together
-      const [dbItems, dbDebts, dbSavings, dbLog] = await Promise.all([
-        db.get("budget_items", {month_key: viewMonth}),
-        db.get("debts"),
-        db.get("savings_funds"),
-        db.get("savings_log"),
-      ]);
+    // db.get always returns [] on any error, so no try/catch needed per-call
+    const [dbItems, dbDebts, dbSavings, dbLog] = await Promise.all([
+      db.get("budget_items", {month_key: viewMonth}),
+      db.get("debts"),
+      db.get("savings_funds"),
+      db.get("savings_log"),
+    ]);
 
-      if (dbItems?.length) setItems(dbItems); else await seedItems();
-      if (dbDebts?.length) setDebts(dbDebts); else await seedDebts();
-      if (dbSavings?.length) setSavings(dbSavings); else await seedSavings();
-      if (dbLog?.length) setSavingsLog(dbLog);
+    if (dbItems.length) setItems(dbItems); else await seedItems();
+    if (dbDebts.length) setDebts(dbDebts); else await seedDebts();
+    if (dbSavings.length) setSavings(dbSavings); else await seedSavings();
+    if (dbLog.length) setSavingsLog(dbLog);
 
-      const allM = await db.get("budget_items");
-      const months = [...new Set((allM||[]).map(x => x.month_key))].sort().reverse();
-      if (months.length) setAllMonths(months);
-    } catch (e) {
-      showToast("Connection error — check internet", "err");
-    }
+    // Load all months for the month picker
+    const allM = await db.get("budget_items"); // safe: always returns []
+    const months = [...new Set(allM.map(x => x.month_key))].filter(Boolean).sort().reverse();
+    if (months.length) setAllMonths(months);
 
-    // expense_log is separate — a missing/broken table won't affect core data
-    try {
-      const dbExpLog = await db.get("expense_log", {month_key: viewMonth});
-      if (dbExpLog?.length) setExpenseLog(dbExpLog);
-      else setExpenseLog([]);
-    } catch {
-      setExpenseLog([]);
-    }
+    // Expense log separate — failure here never blocks the app
+    const dbExpLog = await db.get("expense_log", {month_key: viewMonth});
+    setExpenseLog(dbExpLog);
 
     setLoading(false);
   }
@@ -385,15 +383,15 @@ export default function App() {
   async function seedItems() {
     const rows = DEFAULT_ITEMS.map(b => ({...b, month_key: CUR}));
     const res = await db.upsert("budget_items", rows);
-    if (Array.isArray(res) && res.length) setItems(res);
+    if (res.length) setItems(res);
   }
   async function seedDebts() {
     const res = await db.upsert("debts", DEFAULT_DEBTS);
-    if (Array.isArray(res) && res.length) setDebts(res);
+    if (res.length) setDebts(res);
   }
   async function seedSavings() {
     const res = await db.upsert("savings_funds", DEFAULT_SAVINGS);
-    if (Array.isArray(res) && res.length) setSavings(res);
+    if (res.length) setSavings(res);
   }
 
   // ── Computed ─────────────────────────────────────────────────────────────────
